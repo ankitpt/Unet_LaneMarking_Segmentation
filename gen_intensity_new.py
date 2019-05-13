@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from PIL import Image
-
+import itertools
 
 def getEquidistantPoints(p1, p2, parts):
     
@@ -32,7 +32,7 @@ def print_point_density(loc,rows,cols,size,cell_siz,num):
     
 
 
-def point_to_image(filename,num,trj):
+def point_to_image(filename,num,trj,tile):
 
 #Reading the point cloud file
     data=np.zeros([500000,7])
@@ -59,7 +59,7 @@ def point_to_image(filename,num,trj):
     y_min=np.min(data[:,1])                  #tile_25_news_000006
     y_max=np.max(data[:,1])
    # plt.scatter(data[:,0],data[:,1])
-    data[:,5]=np.where(data[:,5] > 25, 255, 0)
+    data[:,5]=np.where(data[:,5] > 35, 255, 0)
     #data[:,5]=np.interp(data[:,5], (0, 50), (0, 255))
     #intens=data[:,5]
     #intens[intens < 127] = 0
@@ -122,8 +122,8 @@ def point_to_image(filename,num,trj):
             i=int((y-y_min)/cell_siz)
             img_l[i,j]=255
     
-    
-    os.chdir("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/Images_00")
+   
+    os.chdir("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/unet-master/unet-master/data/membrane/test")
     
     img2 = Image.fromarray(img.astype(np.uint8))
     img_l = Image.fromarray(img_l.astype(np.uint8))
@@ -141,13 +141,13 @@ def point_to_image(filename,num,trj):
     
    # plt.imsave(nfilename, img2, cmap='gray')
     print("Image saved,",nfilename)
-    print( x_min,y_min,x_max,y_max,file=open("georef.txt", "a"))
-    print( sfx,sfy,file=open("sf.txt", "a"))
     
-    os.chdir("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/Images_00_trj")
+    
+    os.chdir("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/Images_"+tile+"_trj")
     img_l.transpose(Image.FLIP_LEFT_RIGHT).save(nfilename,"PNG")
-    
-    os.chdir("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/Point_Cloud_00")
+    print( x_min,y_min,x_max,y_max,file=open("georef_"+tile+".txt", "a"))
+    print( sfx,sfy,file=open("sf_"+tile+".txt", "a"))
+    os.chdir("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/Point_Cloud_"+tile)
     
     #return loc
 
@@ -157,7 +157,7 @@ trj=np.zeros((10000,4))
 #reading trajectory file
 with open("export_Mission 1.txt") as infile:
     
-    for line in itertools.islice(infile, 47278, 55800):
+    for line in itertools.islice(infile, 78314, 86476):
         
    #     if(k==-1):
     #            k=k+1
@@ -187,10 +187,10 @@ trj=trj[~np.all(trj == 0, axis=1)]
 
 
 
+tile="04"
+os.chdir("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/Point_Cloud_"+tile)
 
-os.chdir("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/Point_Cloud_00")
-
-directory = os.fsencode("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/Point_Cloud_00")
+directory = os.fsencode("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/Point_Cloud_"+tile)
 filelist=os.listdir(directory)
 filelist = sorted(filelist,key=lambda x: int(os.path.splitext(x)[0][-2:]))
 
@@ -203,7 +203,7 @@ for file in filelist:
     
     filename = os.fsdecode(file)
     print("Processing file ",filename)
-    point_to_image(filename,j,trj)
+    point_to_image(filename,j,trj,tile)
     j=j+1
 
 
