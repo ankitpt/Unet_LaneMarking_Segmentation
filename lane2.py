@@ -28,9 +28,21 @@ def project(pnts,vx,vy,xo,yo):
      
     return pro_pnts
 
+tile="04"
+scale=open("sf_"+tile+".txt","r")
+sfs=np.zeros((100,1))
+k=0
+for line in scale:
+    
+    print(line)
+    line=line.strip('\n').split(' ')
+    print(line)
+    sfs[k,:]=float(line[0])
+    k=k+1
 
+sfs=sfs[~np.all(sfs == 0, axis=1)]
 
-for img_k in [18]:
+for img_k in range(0,65):
     img=cv2.imread(str(img_k)+"_predict.png",0)        
     nimg=np.zeros((256,256))
     #fitting line to trj points
@@ -38,6 +50,7 @@ for img_k in [18]:
     img_trj=cv2.imread(str(img_k)+".png",0)
     trj=np.where(img_trj==255)
     trj_pts=list()
+    
     for (x,y) in zip(trj[0],trj[1]):
         trj_pts.append([y,x])
     
@@ -207,6 +220,11 @@ for img_k in [18]:
             
             rp.append(pnt)
     
+    if(len(lp) == 0 or len(rp)==0):
+        
+        print("Lane in image ",img_k," is too wide to detect markings on either left or right side")
+        continue
+        
     [vxl,vyl,xl,yl] = cv2.fitLine(np.array(lp), cv2.DIST_L2,0,0.01,0.01)   
     [vxr,vyr,xr,yr] = cv2.fitLine(np.array(rp), cv2.DIST_L2,0,0.01,0.01)   
     
@@ -233,7 +251,7 @@ for img_k in [18]:
         c=vxr*yr-vyr*xr
         lane_width=(abs(a*x_lt+b*y+c)/np.sqrt(a*a+b*b))*0.05*(sfs[img_k])*3.28084
         print("Estimated lane width is, ",lane_width," feet")
-        print( lane_width[0],img_k,file=open("lw2.txt", "a"))
+        print( lane_width[0],img_k,file=open("lw"+tile+".txt", "a"))
     
     
     
