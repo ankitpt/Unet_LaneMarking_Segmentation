@@ -28,21 +28,34 @@ def project(pnts,vx,vy,xo,yo):
      
     return pro_pnts
 
-tile="04"
+tile="12"
+
+if os.path.exists("C:/Users/17657/Desktop/DPRG/lw/lw_"+tile+".txt"):
+  os.remove("C:/Users/17657/Desktop/DPRG/lw/lw_"+tile+".txt")
+else:
+  pass
+
+
+os.chdir("C:/Users/17657/Desktop/DPRG/sf")
 scale=open("sf_"+tile+".txt","r")
 sfs=np.zeros((100,1))
 k=0
 for line in scale:
     
-    print(line)
+    
     line=line.strip('\n').split(' ')
-    print(line)
+    
     sfs[k,:]=float(line[0])
     k=k+1
 
 sfs=sfs[~np.all(sfs == 0, axis=1)]
 
-for img_k in range(0,65):
+os.chdir("C:/Users/17657/Desktop/DPRG")
+emp=list()
+
+
+
+for img_k in [0]:
     img=cv2.imread(str(img_k)+"_predict.png",0)        
     nimg=np.zeros((256,256))
     #fitting line to trj points
@@ -75,6 +88,9 @@ for img_k in range(0,65):
     image, contours, hierarchy = cv2.findContours(nimg,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
     
     
+    if(len(contours)<=1):
+        emp.append(img_k)
+        continue
     
     
     rows,cols = nimg.shape[:2]
@@ -193,6 +209,11 @@ for img_k in range(0,65):
              #   cv2.circle(rgb,(int(round(pnt[0])),int(round(pnt[1]))), 0, (0,255,0), -1)
     
         else:
+            
+            
+            os.chdir("C:/Users/17657/Desktop/DPRG/ambiguous")
+            tmean=np.mean(contour, axis=0)
+            print( tmean,img_k,file=open("ambiguous_"+tile+".txt", "a"))
             print("The contour ",k," is ambiguous",langle,rangle)
            # pro_pnts=project(contour,vx,vy,x,y)
             
@@ -241,6 +262,7 @@ for img_k in range(0,65):
         cv2.circle(rgb,(int(round(pnt[0])),int(round(pnt[1]))), 0, (255,0,0), -1)
     
     
+    os.chdir("C:/Users/17657/Desktop/DPRG/lw")
     ys=range(5,255,5)
     
     for y in ys:
@@ -251,14 +273,17 @@ for img_k in range(0,65):
         c=vxr*yr-vyr*xr
         lane_width=(abs(a*x_lt+b*y+c)/np.sqrt(a*a+b*b))*0.05*(sfs[img_k])*3.28084
         print("Estimated lane width is, ",lane_width," feet")
-        print( lane_width[0],img_k,file=open("lw"+tile+".txt", "a"))
+        print( lane_width[0],img_k,file=open("lw_"+tile+".txt", "a"))
     
-    
+    os.chdir("C:/Users/17657/Desktop/DPRG")
     
     plt.imshow(rgb,cmap='gray')
     cv2.imwrite("try.png",rgb)
 
+if(len(emp)!=0):
+    
+    print("Road markings not detected in tile, ",tile," in following images, ",emp)
 
-
+scale.close()
 end = time.time()
 print(end - start)
