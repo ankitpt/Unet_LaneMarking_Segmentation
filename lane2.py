@@ -1,4 +1,4 @@
-
+tile=input("Which tile to process? ")
 import time
 
 start = time.time()
@@ -28,34 +28,56 @@ def project(pnts,vx,vy,xo,yo):
      
     return pro_pnts
 
-tile="12"
 
 if os.path.exists("C:/Users/17657/Desktop/DPRG/lw/lw_"+tile+".txt"):
   os.remove("C:/Users/17657/Desktop/DPRG/lw/lw_"+tile+".txt")
 else:
   pass
 
+if os.path.exists("C:/Users/17657/Desktop/DPRG/ambiguous/ambiguous_"+tile+".txt"):
+  os.remove("C:/Users/17657/Desktop/DPRG/ambiguous/ambiguous_"+tile+".txt")
+else:
+  pass
+
 
 os.chdir("C:/Users/17657/Desktop/DPRG/sf")
 scale=open("sf_"+tile+".txt","r")
-sfs=np.zeros((100,1))
+
+os.chdir("C:/Users/17657/Desktop/DPRG/georef")
+geo=open("georef_"+tile+".txt","r")
+
+sfs=np.zeros((100,2))
+geos=np.zeros((100,4))
 k=0
 for line in scale:
     
     
     line=line.strip('\n').split(' ')
     
-    sfs[k,:]=float(line[0])
+    sfs[k,:]=[float(s) for s in line]
     k=k+1
 
 sfs=sfs[~np.all(sfs == 0, axis=1)]
 
+k=0
+for line in geo:
+    
+    
+    line=line.strip('\n').split(' ')
+    
+    geos[k,:]=[float(s) for s in line]
+    k=k+1
+
+geos=geos[~np.all(geos == 0, axis=1)]
+
 os.chdir("C:/Users/17657/Desktop/DPRG")
-emp=list()
+wide=list()
+var=list()
 
 
-
-for img_k in [0]:
+for img_k in range(0,65):
+    
+    
     img=cv2.imread(str(img_k)+"_predict.png",0)        
     nimg=np.zeros((256,256))
     #fitting line to trj points
@@ -74,7 +96,12 @@ for img_k in [0]:
     for y1 in range(0,256):
         
         x1=(y1-(y-(vy/vx)*x))*(vx/vy)
-        xnew=np.array(range(int(x1)-45,int(x1)+45,1))
+        dist=np.sqrt(vx*vx+vy*vy)
+        dx=vx/dist
+        dy=vy/dist
+        x_right=x1+(45/sfs[img_k,0])*abs(dy)
+        x_left=x1-(45/sfs[img_k,0])*abs(dy)
+        xnew=np.arange(int(np.round(x_left)),int(np.round(x_right))+1,1)
         nimg[y1,xnew]=img[y1,xnew]
     
     
@@ -89,7 +116,7 @@ for img_k in [0]:
     
     
     if(len(contours)<=1):
-        emp.append(img_k)
+        wide.append(img_k)
         continue
     
     
@@ -106,10 +133,14 @@ for img_k in [0]:
     #finding left and rightmost lane marker
     for contour in contours:
         
-       #checking A/P ratio to see if the cluster is valid
-        if(cv2.contourArea(contour)<55 or cv2.contourArea(contour)/(cv2.arcLength(contour,True)+0.000001)<=1.5 ):
+        A=cv2.contourArea(contour)
+        P=cv2.arcLength(contour,True)+0.000001
+       #checking A/P ratio to see if the cluster is invalid
+        if(A/P<=1.5 and A<55):
             k=k+1
             #print(cv2.contourArea(contour)/cv2.arcLength(contour,True))
+            print(img_k)
+            print("oh")
             continue
         
        
@@ -134,6 +165,23 @@ for img_k in [0]:
         
         k=k+1    
     
+    if (rtm-lftm<50):
+        
+        if(cl==cr):
+            
+            var.append(img_k)
+            var.append(P/A)
+            var.append(A)
+            var.append(" ")
+            
+        else:
+            wide.append(img_k)
+            print("Left and right most markers are too close, thus potential wide lane in image ",img_k)
+            continue
+        
+        
+    
+    
     k=0    
     
     lmean=np.mean(contours[cl], axis=0)
@@ -147,7 +195,9 @@ for img_k in [0]:
     
     for contour in contours:
         
-        if(cv2.contourArea(contour)<55 or cv2.contourArea(contour)/(cv2.arcLength(contour,True)+0.000001)<=1.5):
+        A=cv2.contourArea(contour)
+        P=cv2.arcLength(contour,True)+0.000001
+        if(A/P<=1.5 and A<55):
             k=k+1
             continue
         
@@ -188,7 +238,7 @@ for img_k in [0]:
         if(rangle>90):
             rangle=180-rangle
         
-        if(langle<5):
+        if(langle<3):
             
             cleft.append(k)
             print("The contour ",k," belongs to left side",langle)
@@ -198,7 +248,7 @@ for img_k in [0]:
                 
             #    cv2.circle(rgb,(int(round(pnt[0])),int(round(pnt[1]))), 0, (0,255,0), -1)
     
-        elif(rangle<4.9):
+        elif(rangle<4):
             
             cright.append(k)
             print("The contour ",k," belongs to right side",rangle)
@@ -213,8 +263,10 @@ for img_k in [0]:
             
             os.chdir("C:/Users/17657/Desktop/DPRG/ambiguous")
             tmean=np.mean(contour, axis=0)
-            print( tmean,img_k,file=open("ambiguous_"+tile+".txt", "a"))
+            print( tmean[0],img_k,file=open("ambiguous_"+tile+".txt", "a"))
             print("The contour ",k," is ambiguous",langle,rangle)
+            #emp.append(img_k)
+            os.chdir("C:/Users/17657/Desktop/DPRG")
            # pro_pnts=project(contour,vx,vy,x,y)
             
            # for pnt in pro_pnts:
@@ -268,22 +320,33 @@ for img_k in [0]:
     for y in ys:
         
         x_lt=(y-(yl-(vyl/vxl)*xl))*(vxl/vyl)
+        X=geos[img_k,0]+0.05*sfs[img_k,0]*x_lt
+        Y=geos[img_k,1]+0.05*sfs[img_k,1]*y
         a=vyr
         b=-vxr
         c=vxr*yr-vyr*xr
-        lane_width=(abs(a*x_lt+b*y+c)/np.sqrt(a*a+b*b))*0.05*(sfs[img_k])*3.28084
+        lane_width=(abs(a*x_lt+b*y+c)/np.sqrt(a*a+b*b))*0.05*(sfs[img_k,0])*3.28084
         print("Estimated lane width is, ",lane_width," feet")
-        print( lane_width[0],img_k,file=open("lw_"+tile+".txt", "a"))
+        print( lane_width[0],img_k,X[0],Y,file=open("lw_"+tile+".txt", "a"))
     
     os.chdir("C:/Users/17657/Desktop/DPRG")
     
     plt.imshow(rgb,cmap='gray')
-    cv2.imwrite("try.png",rgb)
-
-if(len(emp)!=0):
+    os.chdir("C:/Users/17657/Desktop/DPRG/try")
+    cv2.imwrite("try"+str(img_k)+".png",rgb)
     
-    print("Road markings not detected in tile, ",tile," in following images, ",emp)
+    os.chdir("C:/Users/17657/Desktop/DPRG")
+    
+if(len(wide)!=0):
+    
+    print("Lane is too wide(>15feet) in tile, ",tile," in following images, ",wide)
+
+if(len(var)!=0):
+    
+    print("Consider varying A/P or A threshold, present values in order of image, A/P and A are ",var)
 
 scale.close()
+plt.imshow(rgb,cmap='gray')
 end = time.time()
+
 print(end - start)

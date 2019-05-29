@@ -8,7 +8,7 @@ import os
 from PIL import Image
 import itertools
 from PIL import ImageFilter
-
+import cv2
 
 def getEquidistantPoints(p1, p2, parts):
     
@@ -41,7 +41,7 @@ def print_point_density(loc,rows,cols,size,cell_siz,num):
 def point_to_image(filename,num,trj,tile):
 
 #Reading the point cloud file
-    data=np.zeros([500000,7])
+    data=np.zeros([600000,7])
 
     k=-1
 
@@ -65,7 +65,19 @@ def point_to_image(filename,num,trj,tile):
     y_min=np.min(data[:,1])                  #tile_25_news_000006
     y_max=np.max(data[:,1])
    # plt.scatter(data[:,0],data[:,1])
-    data[:,5]=np.where(data[:,5] > 25, 255, 0)
+   
+   #changed on 23 may
+    perc=np.percentile(data[:,5],90)
+    print(perc)
+    #print(perc)
+    intens=data[:,5]
+    intens[intens >= perc] = 255
+    data[:,5]=intens
+    #data[:,5]=np.where(data[:,5] > perc, 255, 0)
+    #print(np.unique(data[:,5]))
+    #changed on 23rd may up till here
+    
+    #print(np.unique(data[:,5]))
     #data[:,5]=np.interp(data[:,5], (0, 50), (0, 255))
     #intens=data[:,5]
     #intens[intens < 127] = 0
@@ -108,12 +120,22 @@ def point_to_image(filename,num,trj,tile):
               except:
               
                continue
-            
+    #perc=np.percentile(img,95)   
+    
+    img[img >= perc] = 255
+   # img[img < perc] = 0
+    img=np.uint8(img)
+    #kernel = np.ones((3,1),np.uint8)
+    #img = cv.erode(img,kernel,iterations = 1)
+    #img=cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+    #kernel = np.ones((2,1),np.uint8)
+    #img = cv.dilate(img,kernel,iterations = 1)     
     nfilename=str(num)+".png"
-    nfilename2=str(num)+".png"
+  #  nfilename2=str(num)+".png"
     
     #Finding trajectory points in this pt cloud file
     img_l=np.zeros([rows,cols])
+    
     
     for j in range(trj.shape[0]):
         
@@ -134,7 +156,8 @@ def point_to_image(filename,num,trj,tile):
     img2 = Image.fromarray(img.astype(np.uint8))
     img_l = Image.fromarray(img_l.astype(np.uint8))
     
-    #img2=img2.filter(ImageFilter.SMOOTH)
+    img2=img2.filter(ImageFilter.MedianFilter(size=5))
+#    img2=img2.filter(ImageFilter.MedianFilter(size=3))
     
     img2 = img2.resize((256,256))
     img_l = img_l.resize((256,256))
@@ -153,6 +176,8 @@ def point_to_image(filename,num,trj,tile):
     os.chdir("C:/Users/17657/Desktop/DPRG")
     #os.chdir("//myhome.itap.purdue.edu/myhome/pate1019/ecn.data/Desktop/DPRG_ECN/Images_"+tile+"_trj")
     img_l.transpose(Image.FLIP_LEFT_RIGHT).save(nfilename,"PNG")
+    os.chdir("C:/Users/17657/Desktop/DPRG/trajectory/"+tile)
+    img_l.transpose(Image.FLIP_LEFT_RIGHT).save(nfilename,"PNG")
     os.chdir("C:/Users/17657/Desktop/DPRG/georef")
     print( x_min,y_min,x_max,y_max,file=open("georef_"+tile+".txt", "a"))
     os.chdir("C:/Users/17657/Desktop/DPRG/sf")
@@ -162,7 +187,8 @@ def point_to_image(filename,num,trj,tile):
     #return loc
 
 
-
+tile=input("Which tile to process? ")
+rang=input("Enter trajectory range ").split()
 
 k=0
 trj=np.zeros((10000,4))
@@ -171,7 +197,7 @@ trj=np.zeros((10000,4))
 
 
 
-tile="12"
+#tile="!4"
 
 if os.path.exists("C:/Users/17657/Desktop/DPRG/sf/sf_"+tile+".txt"):
   os.remove("C:/Users/17657/Desktop/DPRG/sf/sf_"+tile+".txt")
@@ -184,27 +210,28 @@ else:
   pass
 
 
-with open("export_Mission 1 - Cloud_"+tile+".txt") as infile:
+#with open("export_Mission 1 - Cloud_"+tile+".txt") as infile:
+with open("export_Mission 1.txt") as infile:  
     
-    for line in itertools.islice(infile, 140386, 148832):
+    for line in itertools.islice(infile, int(rang[0]), int(rang[1])):
         
    #     if(k==-1):
     #            k=k+1
      #           continue
         
-        line=line.strip('\n').split(' ')
+        line=line.strip('\n').split('\t')
         line=[float(c) for c in line]
         line=line[0:4]
         trj[k,:]=line
         k=k+1
 
-#trj=trj[:,1:3]
-trj=trj[~np.all(trj == 0, axis=1)]
 
+trj=trj[~np.all(trj == 0, axis=1)]
+trj=trj[:,1:3]
 
         
 #for transformed traj
-trj=trj[:,0:2]
+#trj=trj[:,0:2]
 #trj=trj[:,0:2]
 #row_trj=trj.shape[0]
 #col_trj=trj.shape[1]
