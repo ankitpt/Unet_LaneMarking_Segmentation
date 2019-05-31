@@ -8,6 +8,12 @@ import matplotlib.pyplot as plt
 import os
 from PIL import Image
 import cv2
+import math
+
+def get_dis(c1,c2,vx,vy):
+    
+    dis=abs(vx*c1-vx*c2)/np.sqrt(vx*vx+vy*vy)
+    return dis
 
 def project(pnts,vx,vy,xo,yo):
     
@@ -75,7 +81,7 @@ wide=list()
 var=list()
 
 
-for img_k in range(0,65):
+for img_k in [45]:
     
     
     img=cv2.imread(str(img_k)+"_predict.png",0)        
@@ -95,12 +101,13 @@ for img_k in range(0,65):
     #extracting road lane perpendicular to trajectory line
     for y1 in range(0,256):
         
-        x1=(y1-(y-(vy/vx)*x))*(vx/vy)
+        c_cept=y-(vy/vx)*x
+        x1=(y1-(c_cept))*(vx/vy)
         dist=np.sqrt(vx*vx+vy*vy)
         dx=vx/dist
         dy=vy/dist
-        x_right=x1+(45/sfs[img_k,0])*abs(dy)
-        x_left=x1-(45/sfs[img_k,0])*abs(dy)
+        x_right=x1+(55/sfs[img_k,0])*abs(dy)
+        x_left=x1-(50/sfs[img_k,0])*abs(dy)
         xnew=np.arange(int(np.round(x_left)),int(np.round(x_right))+1,1)
         nimg[y1,xnew]=img[y1,xnew]
     
@@ -129,43 +136,55 @@ for img_k in range(0,65):
     tpm1=255
     tpm2=255
     
-    
+    left_sign=np.sign(255-(vy/vx)*0-c_cept)
+    right_sign=np.sign(0-(vy/vx)*255-c_cept)
     #finding left and rightmost lane marker
     for contour in contours:
         
         A=cv2.contourArea(contour)
         P=cv2.arcLength(contour,True)+0.000001
+        W=(P-np.sqrt(P*P-16*A))/4
+        L=(P+np.sqrt(P*P-16*A))/4
+        
        #checking A/P ratio to see if the cluster is invalid
-        if(A/P<=1.5 and A<55):
+        if(math.isnan(W) or math.isnan(L) or (W<2 or L<20)):
             k=k+1
             #print(cv2.contourArea(contour)/cv2.arcLength(contour,True))
             print(img_k)
+            print(W,L)
             print("oh")
             continue
         
        
             
-        
+        mean=np.mean(contour, axis=0)
         leftmost = tuple(contour[contour[:,:,0].argmin()][0])
         rightmost = tuple(contour[contour[:,:,0].argmax()][0])
         topmost = tuple(contour[contour[:,:,1].argmin()][0])
     
         
-        if(leftmost[0]<lftm ):
-            
+        #if(leftmost[0]<lftm ):
+        if(mean[0][0]<lftm and np.sign(mean[0][1]-(vy/vx)*mean[0][0]-c_cept)==left_sign):   
             cl=k
-            lftm=leftmost[0]
-            
-            
-        if(rightmost[0]>rtm):
+            #lftm=leftmost[0]
+            lftm=mean[0][0]
+            lftm_y=mean[0][1]
+        #if(rightmost[0]>rtm):
+        elif(mean[0][0]>rtm and np.sign(mean[0][1]-(vy/vx)*mean[0][0]-c_cept)==right_sign):
             
             cr=k
-            rtm=rightmost[0]
-            
+            rtm=mean[0][0]
+            rtm_y=mean[0][1]
         
         k=k+1    
     
-    if (rtm-lftm<50):
+    
+    m=vy/vx
+    c1=lftm_y-m*lftm
+    c2=rtm_y-m*rtm
+    dis=get_dis(c1,c2,vx,vy)
+    
+    if (dis<50/sfs[img_k,0]):
         
         if(cl==cr):
             
@@ -197,7 +216,9 @@ for img_k in range(0,65):
         
         A=cv2.contourArea(contour)
         P=cv2.arcLength(contour,True)+0.000001
-        if(A/P<=1.5 and A<55):
+        W=(P-np.sqrt(P*P-16*A))/4
+        L=(P+np.sqrt(P*P-16*A))/4
+        if(math.isnan(W) or math.isnan(L) or (W<2 or L<20)):
             k=k+1
             continue
         
@@ -238,7 +259,7 @@ for img_k in range(0,65):
         if(rangle>90):
             rangle=180-rangle
         
-        if(langle<3):
+        if(langle<4):
             
             cleft.append(k)
             print("The contour ",k," belongs to left side",langle)
