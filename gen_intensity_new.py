@@ -35,13 +35,12 @@ def print_point_density(loc,rows,cols,size,cell_siz,num):
                 
                 continue
     print("Point density in point_cloud " ,num, "between locations ",m,n,"and ",i,j,"is, ",count/size,"pts/m^2 \n",file=open("output.txt", "a"))
-    
 
 
 def point_to_image(filename,num,trj,tile):
 
 #Reading the point cloud file
-    data=np.zeros([600000,7])
+    data=np.zeros([900000,7])
 
     k=-1
 
@@ -67,11 +66,14 @@ def point_to_image(filename,num,trj,tile):
    # plt.scatter(data[:,0],data[:,1])
    
    #changed on 23 may
-    perc=np.percentile(data[:,5],90)
+
+    perc=np.percentile(data[:,5],95)
+
+        
+    
     print(perc)
-    #print(perc)
     intens=data[:,5]
-    intens[intens >= perc] = 255
+    intens[intens > perc] = 255
     data[:,5]=intens
     #data[:,5]=np.where(data[:,5] > perc, 255, 0)
     #print(np.unique(data[:,5]))
@@ -125,7 +127,7 @@ def point_to_image(filename,num,trj,tile):
     img[img >= perc] = 255
    # img[img < perc] = 0
     img=np.uint8(img)
-    #kernel = np.ones((3,1),np.uint8)
+    #kernel = np.ones((2,1),np.uint8)
     #img = cv.erode(img,kernel,iterations = 1)
     #img=cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
     #kernel = np.ones((2,1),np.uint8)
@@ -156,7 +158,7 @@ def point_to_image(filename,num,trj,tile):
     img2 = Image.fromarray(img.astype(np.uint8))
     img_l = Image.fromarray(img_l.astype(np.uint8))
     
-    img2=img2.filter(ImageFilter.MedianFilter(size=5))
+    #img2=img2.filter(ImageFilter.MedianFilter(size=3))
 #    img2=img2.filter(ImageFilter.MedianFilter(size=3))
     
     img2 = img2.resize((256,256))

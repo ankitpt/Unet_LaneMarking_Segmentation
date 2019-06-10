@@ -81,8 +81,10 @@ wide=list()
 var=list()
 
 
-for img_k in [45]:
+for img_k in [19]:
     
+    cl=None
+    cr=None
     
     img=cv2.imread(str(img_k)+"_predict.png",0)        
     nimg=np.zeros((256,256))
@@ -106,8 +108,8 @@ for img_k in [45]:
         dist=np.sqrt(vx*vx+vy*vy)
         dx=vx/dist
         dy=vy/dist
-        x_right=x1+(55/sfs[img_k,0])*abs(dy)
-        x_left=x1-(50/sfs[img_k,0])*abs(dy)
+        x_right=x1+(50*sfs[img_k,0])*abs(dy)
+        x_left=x1-(80*sfs[img_k,0])*abs(dy)
         xnew=np.arange(int(np.round(x_left)),int(np.round(x_right))+1,1)
         nimg[y1,xnew]=img[y1,xnew]
     
@@ -119,10 +121,16 @@ for img_k in [45]:
     
     
     nimg = nimg.astype(np.uint8)
+    
+
+    #nimg = cv2.dilate(nimg,kernel,iterations = 1)
+    
+    
     image, contours, hierarchy = cv2.findContours(nimg,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
     
     
     if(len(contours)<=1):
+        print("Wide lane marking detected on only one side in image ",img_k)
         wide.append(img_k)
         continue
     
@@ -138,73 +146,70 @@ for img_k in [45]:
     
     left_sign=np.sign(255-(vy/vx)*0-c_cept)
     right_sign=np.sign(0-(vy/vx)*255-c_cept)
+    
+    lftm_mag=0
+    rtm_mag=0
     #finding left and rightmost lane marker
     for contour in contours:
         
         A=cv2.contourArea(contour)
         P=cv2.arcLength(contour,True)+0.000001
-        W=(P-np.sqrt(P*P-16*A))/4
-        L=(P+np.sqrt(P*P-16*A))/4
+        
+        if(round(A)==0 or round(P)==0):
+            k=k+1
+            continue
+
+        
+        W=sfs[img_k,0]*(P-np.sqrt(P*P-16*A))/4
+        L=sfs[img_k,1]*(P+np.sqrt(P*P-16*A))/4
+        
+        hull = cv2.convexHull(contour)
+        hull_area = cv2.contourArea(hull)
+        solidity = float(A)/hull_area
         
        #checking A/P ratio to see if the cluster is invalid
-        if(math.isnan(W) or math.isnan(L) or (W<2 or L<20)):
+        if(math.isnan(W) or math.isnan(L) or (W<2 or L<20) or (L<30 and solidity<0.75) ):
             k=k+1
             #print(cv2.contourArea(contour)/cv2.arcLength(contour,True))
-            print(img_k)
-            print(W,L)
-            print("oh")
             continue
         
        
             
         mean=np.mean(contour, axis=0)
-        leftmost = tuple(contour[contour[:,:,0].argmin()][0])
-        rightmost = tuple(contour[contour[:,:,0].argmax()][0])
-        topmost = tuple(contour[contour[:,:,1].argmin()][0])
+  #      leftmost = tuple(contour[contour[:,:,0].argmin()][0])
+   #     rightmost = tuple(contour[contour[:,:,0].argmax()][0])
+    #    topmost = tuple(contour[contour[:,:,1].argmin()][0])
     
-        
+        sign_check=mean[0][1]-(vy/vx)*mean[0][0]-c_cept
         #if(leftmost[0]<lftm ):
-        if(mean[0][0]<lftm and np.sign(mean[0][1]-(vy/vx)*mean[0][0]-c_cept)==left_sign):   
+        if(np.sign(sign_check)==left_sign and abs(sign_check)>lftm_mag):
+        #if(mean[0][0]<lftm and np.sign(mean[0][1]-(vy/vx)*mean[0][0]-c_cept)==left_sign):   
             cl=k
             #lftm=leftmost[0]
             lftm=mean[0][0]
-            lftm_y=mean[0][1]
+            lftm_mag=abs(sign_check)
+    #        lftm_y=mean[0][1]
         #if(rightmost[0]>rtm):
-        elif(mean[0][0]>rtm and np.sign(mean[0][1]-(vy/vx)*mean[0][0]-c_cept)==right_sign):
-            
+        #elif(mean[0][0]>rtm and np.sign(mean[0][1]-(vy/vx)*mean[0][0]-c_cept)==right_sign):
+        elif(np.sign(sign_check)==right_sign and abs(sign_check)>rtm_mag):    
             cr=k
             rtm=mean[0][0]
-            rtm_y=mean[0][1]
+            rtm_mag=abs(sign_check)
+     #       rtm_y=mean[0][1]
         
         k=k+1    
     
-    
-    m=vy/vx
-    c1=lftm_y-m*lftm
-    c2=rtm_y-m*rtm
-    dis=get_dis(c1,c2,vx,vy)
-    
-    if (dis<50/sfs[img_k,0]):
-        
-        if(cl==cr):
-            
-            var.append(img_k)
-            var.append(P/A)
-            var.append(A)
-            var.append(" ")
-            
-        else:
-            wide.append(img_k)
-            print("Left and right most markers are too close, thus potential wide lane in image ",img_k)
-            continue
-        
-        
-    
-    
     k=0    
-    
-    lmean=np.mean(contours[cl], axis=0)
-    rmean=np.mean(contours[cr], axis=0)
+    try:
+        lmean=np.mean(contours[cl], axis=0)
+        rmean=np.mean(contours[cr], axis=0)
+        
+    except:
+        
+        print("Wide lane since markings on right or left side of proper dimensions could not be detected in ",img_k)
+        wide.append(img_k)
+        continue
+        
     [vx_lref,vy_lref,x_lref,y_lref] = cv2.fitLine(contours[cl], cv2.DIST_L2,0,0.01,0.01)
     [vx_rref,vy_rref,x_rref,y_rref] = cv2.fitLine(contours[cr], cv2.DIST_L2,0,0.01,0.01)
     #Finding right and left grouping of clusters
@@ -216,9 +221,20 @@ for img_k in [45]:
         
         A=cv2.contourArea(contour)
         P=cv2.arcLength(contour,True)+0.000001
-        W=(P-np.sqrt(P*P-16*A))/4
-        L=(P+np.sqrt(P*P-16*A))/4
-        if(math.isnan(W) or math.isnan(L) or (W<2 or L<20)):
+        
+        if(round(A)==0 or round(P)==0):
+            k=k+1
+            continue
+        
+        W=sfs[img_k,0]*(P-np.sqrt(P*P-16*A))/4
+        L=sfs[img_k,1]*(P+np.sqrt(P*P-16*A))/4
+        
+        hull = cv2.convexHull(contour)
+        hull_area = cv2.contourArea(hull)
+        solidity = float(A)/hull_area
+        
+       #checking A/P ratio to see if the cluster is invalid
+        if(math.isnan(W) or math.isnan(L) or (W<2 or L<20) or (L<30 and solidity<0.75)):            
             k=k+1
             continue
         
@@ -249,8 +265,22 @@ for img_k in [45]:
         vr=(cmean-rmean).flatten()
         v_lref=np.array((vx_lref,vy_lref)).flatten()
         v_rref=np.array((vx_rref,vy_rref)).flatten()
-        langle = (180/np.pi)*(np.arccos(np.dot(v_lref, vl) / (np.linalg.norm(v_lref) * np.linalg.norm(vl))))
-        rangle = (180/np.pi)*(np.arccos(np.dot(v_rref, vr) / (np.linalg.norm(v_rref) * np.linalg.norm(vr))))
+        temp_l=np.dot(v_lref, vl) / (np.linalg.norm(v_lref) * np.linalg.norm(vl))
+        temp_r=np.dot(v_rref, vr) / (np.linalg.norm(v_rref) * np.linalg.norm(vr))
+        
+        if(temp_l>1):
+            temp_l=1
+        elif(temp_l<-1):
+            temp_l=-1
+        
+        if(temp_r>1):
+            temp_r=1
+        elif(temp_r<-1):
+            temp_r=-1
+
+        
+        langle = (180/np.pi)*(np.arccos(temp_l))
+        rangle = (180/np.pi)*(np.arccos(temp_r))
         
         
         if(langle>90):
@@ -259,7 +289,7 @@ for img_k in [45]:
         if(rangle>90):
             rangle=180-rangle
         
-        if(langle<4):
+        if(langle<5):
             
             cleft.append(k)
             print("The contour ",k," belongs to left side",langle)
@@ -269,7 +299,7 @@ for img_k in [45]:
                 
             #    cv2.circle(rgb,(int(round(pnt[0])),int(round(pnt[1]))), 0, (0,255,0), -1)
     
-        elif(rangle<4):
+        elif(rangle<5):
             
             cright.append(k)
             print("The contour ",k," belongs to right side",rangle)
@@ -314,10 +344,10 @@ for img_k in [45]:
             
             rp.append(pnt)
     
-    if(len(lp) == 0 or len(rp)==0):
+    #if(len(lp) == 0 or len(rp)==0):
         
-        print("Lane in image ",img_k," is too wide to detect markings on either left or right side")
-        continue
+     #   print("Lane in image ",img_k," is too wide to detect markings on either left or right side")
+      #  continue
         
     [vxl,vyl,xl,yl] = cv2.fitLine(np.array(lp), cv2.DIST_L2,0,0.01,0.01)   
     [vxr,vyr,xr,yr] = cv2.fitLine(np.array(rp), cv2.DIST_L2,0,0.01,0.01)   
@@ -341,6 +371,7 @@ for img_k in [45]:
     for y in ys:
         
         x_lt=(y-(yl-(vyl/vxl)*xl))*(vxl/vyl)
+        print(x_lt)
         X=geos[img_k,0]+0.05*sfs[img_k,0]*x_lt
         Y=geos[img_k,1]+0.05*sfs[img_k,1]*y
         a=vyr
