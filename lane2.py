@@ -53,7 +53,7 @@ os.chdir("C:/Users/17657/Desktop/DPRG/georef")
 geo=open("georef_"+tile+".txt","r")
 
 sfs=np.zeros((100,2))
-geos=np.zeros((100,4))
+geos=np.zeros((100,12))
 k=0
 for line in scale:
     
@@ -155,7 +155,7 @@ for img_k in [19]:
         A=cv2.contourArea(contour)
         P=cv2.arcLength(contour,True)+0.000001
         
-        if(round(A)==0 or round(P)==0):
+        if(round(A)==0 or round(P)==0 or A==None or P==None):
             k=k+1
             continue
 
@@ -222,7 +222,7 @@ for img_k in [19]:
         A=cv2.contourArea(contour)
         P=cv2.arcLength(contour,True)+0.000001
         
-        if(round(A)==0 or round(P)==0):
+        if(round(A)==0 or round(P)==0 or A==None or P==None):
             k=k+1
             continue
         
@@ -366,12 +366,26 @@ for img_k in [19]:
     
     
     os.chdir("C:/Users/17657/Desktop/DPRG/lw")
-    ys=range(5,255,5)
+    
+    
+    [va1,vb1,a1,b1]=cv2.fitLine(np.array([[geos[img_k,4],geos[img_k,5]],[geos[img_k,10],geos[img_k,11]]]), cv2.DIST_L2,0,0.01,0.01)
+    [va2,vb2,a2,b2]=cv2.fitLine(np.array([[geos[img_k,6],geos[img_k,7]],[geos[img_k,8],geos[img_k,9]]]), cv2.DIST_L2,0,0.01,0.01)
+    c1=b1-(vb1*a1)/va1
+    c2=b2-(vb2*a2)/va2
+    cl=yl-(vyl*xl)/vxl
+    
+    det=-(vb1/va1)+vyl/vxl
+    
+    y1=int((-(vb1/va1)*cl+(vyl/vxl)*c1)/det)
+    y2=int((-(vb2/va2)*cl+(vyl/vxl)*c2)/det)
+    
+    
+    ys=np.linspace(y1,y2,50)
     
     for y in ys:
         
         x_lt=(y-(yl-(vyl/vxl)*xl))*(vxl/vyl)
-        print(x_lt)
+        
         X=geos[img_k,0]+0.05*sfs[img_k,0]*x_lt
         Y=geos[img_k,1]+0.05*sfs[img_k,1]*y
         a=vyr

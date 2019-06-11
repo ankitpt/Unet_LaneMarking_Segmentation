@@ -58,11 +58,20 @@ def point_to_image(filename,num,trj,tile):
             k=k+1
     
     data=data[0:k,:]
-#Finding bounds of the file    
-    x_min=np.min(data[:,0])
-    x_max=np.max(data[:,0])
-    y_min=np.min(data[:,1])                  #tile_25_news_000006
-    y_max=np.max(data[:,1])
+#Finding bounds of the file
+    id_xmin=np.argmin(data[:,0])    
+    x_min,y_xmin=data[id_xmin,0:2]
+    
+    id_ymin=np.argmin(data[:,1])    
+    x_ymin,y_min=data[id_ymin,0:2]
+    
+    id_ymax=np.argmax(data[:,1])    
+    x_ymax,y_max=data[id_ymax,0:2]
+    
+    
+    id_xmax=np.argmax(data[:,0])    
+    x_max,y_xmax=data[id_xmax,0:2]
+    #x_max=np.max(data[:,0])
    # plt.scatter(data[:,0],data[:,1])
    
    #changed on 23 may
@@ -107,6 +116,26 @@ def point_to_image(filename,num,trj,tile):
         i=int((y-y_min)/cell_siz)
         
         loc.setdefault((i,j),[]).append(k)
+        
+        if(k==id_xmin):
+            
+            im_x_min=j
+            im_y_xmin=i
+        
+        elif(k==id_ymin):
+            
+            im_x_ymin=j
+            im_y_min=i
+            
+        elif(k==id_ymax):
+            
+            im_x_ymax=j
+            im_y_max=i
+        
+        elif(k==id_xmax):
+            
+            im_x_max=j
+            im_y_xmax=i        
         k=k+1
    
     cnt=0;    
@@ -171,6 +200,18 @@ def point_to_image(filename,num,trj,tile):
     
     sfx=cols/256
     sfy=rows/256
+    im_x_min=int(im_x_min/sfx)
+    im_y_xmin=255-int(im_y_xmin/sfy)
+    
+    im_x_ymin=int(im_x_ymin/sfx)
+    im_y_min=255-int(im_y_min/sfy)
+    
+    
+    im_x_ymax=int(im_x_ymax/sfx)
+    im_y_max=255-int(im_y_max/sfy)
+    
+    im_x_max=int(im_x_max/sfx)
+    im_y_xmax=255-int(im_y_xmax/sfy)
     
    # plt.imsave(nfilename, img2, cmap='gray')
     print("Image saved,",nfilename)
@@ -181,7 +222,7 @@ def point_to_image(filename,num,trj,tile):
     os.chdir("C:/Users/17657/Desktop/DPRG/trajectory/"+tile)
     img_l.transpose(Image.FLIP_LEFT_RIGHT).save(nfilename,"PNG")
     os.chdir("C:/Users/17657/Desktop/DPRG/georef")
-    print( x_min,y_min,x_max,y_max,file=open("georef_"+tile+".txt", "a"))
+    print( x_min,y_min,x_max,y_max,im_x_min,im_y_xmin,im_x_ymin,im_y_min,im_x_max,im_y_xmax,im_x_ymax,im_y_max,file=open("georef_"+tile+".txt", "a"))
     os.chdir("C:/Users/17657/Desktop/DPRG/sf")
     print( sfx,sfy,file=open("sf_"+tile+".txt", "a"))
     os.chdir("C:/Users/17657/Desktop/DPRG/Point_Cloud_"+tile)
