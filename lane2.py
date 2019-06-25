@@ -76,19 +76,22 @@ for line in geo:
 
 geos=geos[~np.all(geos == 0, axis=1)]
 
-os.chdir("C:/Users/17657/Desktop/DPRG")
+
 wide=list()
 var=list()
 
 
-for img_k in [19]:
+for img_k in range(0,63):
     
     cl=None
     cr=None
     
+    os.chdir("C:/Users/17657/Desktop/DPRG/unet-master/unet-master/data/membrane/test_"+tile)    
     img=cv2.imread(str(img_k)+"_predict.png",0)        
     nimg=np.zeros((256,256))
     #fitting line to trj points
+    
+    os.chdir("C:/Users/17657/Desktop/DPRG/trajectory/"+tile)
     
     img_trj=cv2.imread(str(img_k)+".png",0)
     trj=np.where(img_trj==255)
@@ -99,7 +102,9 @@ for img_k in [19]:
     
     [vx,vy,x,y] = cv2.fitLine(np.array([trj_pts]), cv2.DIST_L2,0,0.01,0.01)
     
-    
+    x_pix=2.5*abs(vy)/(0.05*sfs[img_k,0])
+    y_pix=2.5*abs(vx)/(0.05*sfs[img_k,1])
+    pix_dis=np.sqrt(x_pix*x_pix+y_pix*y_pix)    
     #extracting road lane perpendicular to trajectory line
     for y1 in range(0,256):
         
@@ -108,8 +113,12 @@ for img_k in [19]:
         dist=np.sqrt(vx*vx+vy*vy)
         dx=vx/dist
         dy=vy/dist
-        x_right=x1+(50*sfs[img_k,0])*abs(dy)
-        x_left=x1-(80*sfs[img_k,0])*abs(dy)
+
+        x_right=x1+(pix_dis+3)*(dy)
+        x_left=x1-(pix_dis)*(dy)
+        
+        y_right=y1-(pix_dis+3)*(dx)
+        y_left=y1+(pix_dis)*(dx)
         xnew=np.arange(int(np.round(x_left)),int(np.round(x_right))+1,1)
         nimg[y1,xnew]=img[y1,xnew]
     
@@ -372,12 +381,12 @@ for img_k in [19]:
     [va2,vb2,a2,b2]=cv2.fitLine(np.array([[geos[img_k,6],geos[img_k,7]],[geos[img_k,8],geos[img_k,9]]]), cv2.DIST_L2,0,0.01,0.01)
     c1=b1-(vb1*a1)/va1
     c2=b2-(vb2*a2)/va2
-    cl=yl-(vyl*xl)/vxl
+    cl_2=yl-(vyl*xl)/vxl
     
     det=-(vb1/va1)+vyl/vxl
     
-    y1=int((-(vb1/va1)*cl+(vyl/vxl)*c1)/det)
-    y2=int((-(vb2/va2)*cl+(vyl/vxl)*c2)/det)
+    y1=int((-(vb1/va1)*cl_2+(vyl/vxl)*c1)/det)
+    y2=int((-(vb2/va2)*cl_2+(vyl/vxl)*c2)/det)
     
     
     ys=np.linspace(y1,y2,50)
@@ -391,7 +400,11 @@ for img_k in [19]:
         a=vyr
         b=-vxr
         c=vxr*yr-vyr*xr
-        lane_width=(abs(a*x_lt+b*y+c)/np.sqrt(a*a+b*b))*0.05*(sfs[img_k,0])*3.28084
+        #lane_width=(abs(a*x_lt+b*y+c)/np.sqrt(a*a+b*b))*0.05*(sfs[img_k,0])*3.28084
+        pix_lane_width=(abs(a*x_lt+b*y+c)/np.sqrt(a*a+b*b))
+        x_dis=pix_lane_width*abs(vyr)*0.05*sfs[img_k,0]
+        y_dis=pix_lane_width*abs(vxr)*0.05*sfs[img_k,1]
+        lane_width=np.sqrt(x_dis*x_dis+y_dis*y_dis)*3.28
         print("Estimated lane width is, ",lane_width," feet")
         print( lane_width[0],img_k,X[0],Y,file=open("lw_"+tile+".txt", "a"))
     
