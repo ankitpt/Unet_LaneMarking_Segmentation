@@ -9,6 +9,10 @@ import os
 from PIL import Image
 import cv2
 import math
+import shutil
+
+
+
 
 def get_dis(c1,c2,vx,vy):
     
@@ -80,11 +84,17 @@ geos=geos[~np.all(geos == 0, axis=1)]
 wide=list()
 var=list()
 
+try:
+   shutil.rmtree('C:/Users/17657/Desktop/DPRG/try')
+except:
+    pass
+os.mkdir('C:/Users/17657/Desktop/DPRG/try')
 
-for img_k in range(0,63):
+for img_k in [4]:
     
     cl=None
     cr=None
+    
     
     os.chdir("C:/Users/17657/Desktop/DPRG/unet-master/unet-master/data/membrane/test_"+tile)    
     img=cv2.imread(str(img_k)+"_predict.png",0)        
@@ -114,11 +124,11 @@ for img_k in range(0,63):
         dx=vx/dist
         dy=vy/dist
 
-        x_right=x1+(pix_dis+3)*(dy)
+        x_right=x1+(pix_dis)*(dy)
         x_left=x1-(pix_dis)*(dy)
         
-        y_right=y1-(pix_dis+3)*(dx)
-        y_left=y1+(pix_dis)*(dx)
+        y_right=y1-(pix_dis+12)*(dx)
+        y_left=y1+(pix_dis+3)*(dx)
         xnew=np.arange(int(np.round(x_left)),int(np.round(x_right))+1,1)
         nimg[y1,xnew]=img[y1,xnew]
     
