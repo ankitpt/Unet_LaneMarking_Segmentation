@@ -20,6 +20,6 @@ The goal of the project was to train a U-net model to detect lane markings from 
  
 Following python files are updated and ready to be used:
 
-*improved_intensity_generate.py*: Generated intensity images and georeferencing parameters for point cloud blocks in *EB* folder into *images* and *data_for_3D* subfolder, respectively
+ - *improved_intensity_generate.py*: Generated intensity images and georeferencing parameters for point cloud blocks in *EB* folder into *images* and *data_for_3D* subfolder, respectively
 
 Next update: Label generation for intensity images and keras code for U-net training  
