@@ -168,4 +168,4 @@ for file in filelist:
 
 print(f"Took {time.time() - start} seconds to generate intensity images")
 
-    
+#Took 5633.29923415184 seconds to generate intensity images
