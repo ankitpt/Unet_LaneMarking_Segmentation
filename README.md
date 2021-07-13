@@ -20,6 +20,11 @@ The goal of the project was to train a U-net model to detect lane markings from 
  
 Following python files are updated and ready to be used:
 
- - *improved_intensity_generate.py*: Generated intensity images and georeferencing parameters for point cloud blocks in *EB* folder into *images* and *data_for_3D* subfolder, respectively
+ - *improved_intensity_generate.py*: Generate intensity images and georeferencing parameters for point cloud blocks in *EB* folder into *images* and *data_for_3D* subfolder, respectively
 
-Next update: Label generation for intensity images and keras code for U-net training  
+After generating the intensity images, they need to be labelled at pixel level. This is done by using MATLAB's [Image Labeler tool](https://www.mathworks.com/help/vision/ug/get-started-with-the-image-labeler.html). More specifically, one can use **Label Pixels Using Polygon Tool** where all pixels within polygon can be labelled as lane markings while rest are non-lane marking pixels. The labels are exported in form of an image where lane marking pixels have value 1 while non-lane markings ones have value 0. Thus the image will be dark and we can not verify the correctness of labels. To allow that, the values 1 in labels are converted to 255.
+
+ - *mask.py*: Generate easily visualized labels from MATLAB's Image Labeler tool labels in *Image_labeler_output* folder into *Processed_Image_labeler_output* folder
+ 
+
+Next update: keras code for U-net training  
