@@ -27,4 +27,7 @@ After generating the intensity images, they need to be labelled at pixel level. 
  - *mask.py*: Generate easily visualized labels from MATLAB's Image Labeler tool labels in *Image_labeler_output* folder into *Processed_Image_labeler_output* folder
  
 
-Next update: keras code for U-net training  
+Once the intensity images are generated and labelled, they can be divided into training and validation data. The directory structure for the same can be observed in *data* folder. Thereafter below script can be run:
+
+ - *main.py*: Trains the model by augmenting images in *data/train folder* through various manipulations like flipping, zoom in and out and rotating. At each epoch the model is validated on images in *data/val* folder. Training is stopped based on early stopping criteria.
+ 

@@ -3,86 +3,26 @@ import os
 import skimage.io as io
 import skimage.transform as trans
 import numpy as np
-from keras.models import *
+from tensorflow.keras.models import *
 
-from keras.layers import *
-from keras.optimizers import *
-from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-from keras import backend as keras
+from tensorflow.keras.layers import *
+from tensorflow.keras.optimizers import *
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras import backend as keras
 import tensorflow as tf
-from keras import regularizers
+from tensorflow.keras import regularizers
 
 
-#def dice_coef(y_true, y_pred, smooth=1):
-    
-  #  y_true = keras.print_tensor(y_true, message='y_true = ')
-   # y_pred = keras.print_tensor(y_pred, message='y_pred = ')
- #   y_true = keras.flatten(y_true)
-   # y_pred = keras.flatten(y_pred)  
-  #  intersection = keras.sum(y_true * y_pred)
-    #union = keras.sum(y_true) + keras.sum(y_pred)
-    #return keras.mean( (2. * intersection + smooth) / (union + smooth))
 
 def dice_loss(y_true, y_pred):
     
     smooth=1
-  #  y_true = keras.print_tensor(y_true, message='y_true = ')
-   # y_pred = keras.print_tensor(y_pred, message='y_pred = ')
     y_true_f=keras.flatten(y_true)
     y_pred_f=keras.flatten(y_pred)
     intersection = keras.sum(y_true_f * y_pred_f)
     union = keras.sum(y_true_f) + keras.sum(y_pred_f)
     score= (2. * intersection + smooth) / (union + smooth)
     return 1.-score
-
-
-#def dice_coef_loss(y_true, y_pred):
-  #  y_true = keras.print_tensor(y_true, message='y_true = ')
-  #  y_pred = keras.print_tensor(y_pred, message='y_pred = ')
-
-    #return -dice_coef(y_true, y_pred)
-
-#def weighted_loss(y_true, y_pred):
- #   def weighted_binary_cross_entropy(y_true, y_pred):
-        
-
-  #      w = tf.reduce_sum(y_true)/tf.cast(tf.size(y_true), tf.float32)
-        #real_th = 0.5-th 
-        #tf_th = tf.fill(tf.shape(y_pred), real_th) 
-        #tf_zeros = tf.fill(tf.shape(y_pred), 0.)
-        
-   #     return (1.0 - w) * y_true * - tf.log(tf.sigmoid(y_pred) ) + (1- y_true) * w * -tf.log(1 - tf.sigmoid(y_pred))
-   
-
-    #return weighted_binary_cross_entropy(y_true,y_pred)
-
-#def loss2(y_true, y_pred):
- #   def dice_loss(y_true, y_pred):
-  #      numerator = 2 * tf.reduce_sum(y_true * y_pred, axis=(1,2,3))
-   #     denominator = tf.reduce_sum(y_true + y_pred, axis=(1,2,3))
-
-    #    return tf.reshape(1 - numerator / denominator, (-1, 1, 1))
-
-    #return keras.binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
-
-
-def weighted_cross_entropy(beta=3):
-  def convert_to_logits(y_pred):
-      # see https://github.com/tensorflow/tensorflow/blob/r1.10/tensorflow/python/keras/backend.py#L3525
-      y_pred = tf.clip_by_value(y_pred, tf.keras.backend.epsilon(), 1 - tf.keras.backend.epsilon())
-
-      return tf.log(y_pred / (1 - y_pred))
-
-  def loss2(y_true, y_pred):
-    y_pred = convert_to_logits(y_pred)
-    loss2 = tf.nn.weighted_cross_entropy_with_logits(logits=y_pred, targets=y_true, pos_weight=beta)
-
-    # or reduce_sum and/or axis=-1
-    return tf.reduce_mean(loss2)
-
-  return loss2
-
-
 
 
 
@@ -154,11 +94,6 @@ def unet(pretrained_weights = None,input_size = (256,256,1)):
     model = Model(inputs = inputs, outputs= conv10)
 
     model.compile(optimizer = Adam(lr = 8e-5), loss = dice_loss, metrics = ["accuracy"])
-  #  model.compile(optimizer = SGD(lr=0.01, nesterov=True), loss = dice_loss, metrics = ['accuracy'])
-    
-   
-#    #model.compile(optimizer = Adam(lr = 1e-4), loss =iou_coef_loss, metrics = ['accuracy'])
-    #model.summary() 'binary_crossentropy'
 
     if(pretrained_weights):
     	model.load_weights(pretrained_weights)
