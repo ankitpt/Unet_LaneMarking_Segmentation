@@ -90,8 +90,12 @@ def valGenerator(batch_size,val_path,image_folder,label_folder,flag_multi_class=
 
 
 def testGenerator(test_path,num_image = 198,target_size = (256,256),flag_multi_class = False,as_gray = True):
+
+    filelist=os.listdir(test_path)
+    filelist = sorted(filelist,key=lambda x: int(os.path.splitext(x)[0]))
+
     for i in range(num_image):
-        img = io.imread(os.path.join(test_path,"%d.jpg"%i),as_gray = as_gray)
+        img = io.imread(os.path.join(test_path,filelist[i]),as_gray = as_gray)
         img = img / 255
         img = trans.resize(img,target_size)
         img = np.reshape(img,img.shape+(1,)) if (not flag_multi_class) else img
