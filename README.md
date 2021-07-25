@@ -25,16 +25,22 @@ Following python files are updated and ready to be used:
 ### Image labeling
 
 1. Manual Labeling
+
 After generating the intensity images, they need to be labelled at pixel level. This is done by using MATLAB's [Image Labeler tool](https://www.mathworks.com/help/vision/ug/get-started-with-the-image-labeler.html). More specifically, one can use **Label Pixels Using Polygon Tool** where all pixels within polygon can be labelled as lane markings while rest are non-lane marking pixels. The labels are exported in form of an image where lane marking pixels have value 1 while non-lane markings ones have value 0. Thus the image will be dark and we can not verify the correctness of labels. To allow that, the values 1 in labels are converted to 255.
 
  - *mask.py*: Generate easily visualized labels from MATLAB's Image Labeler tool labels in *Automated_labels_raw* folder and save into *Automated_labels_box* folder
 
 2. Automated labeling
+
 In this procedure, we use the threhsolding-based method described in the paper to generate lane markings directly from point clouds. The regions where this method works well are used to generate intensity images for (raw point cloud block, corresponding lane markings) pair to be used for U-net training. Thereafter, lane marking labels are further processed to create bounding boxes around each lane marking segment present in the image to provide better spatial structure. For this, following script can be used:
 
 - *conv_to_bb.py*: Create bounding box around each lane marking segment in the lane marking intensity images present in *Image_labeler_output* folder into *Processed_Image_labeler_output* folder
 
 Once the intensity images are generated and labelled, they can be divided into training and validation data. The directory structure for the same can be observed in *data* folder. Thereafter below script can be run:
 
+### Training and testing
+
  - *main.py*: Trains the model by augmenting images in *data/train folder* through various manipulations like flipping, zoom in and out and rotating. At each epoch the model is validated on images in *data/val* folder. Training is stopped based on early stopping criteria.
+
+ - *test.py*: Runs the predictions of the trained model on images in *testing_images* folder. Prediction images are saved in the same folder. Trained model can be found at this link : https://drive.google.com/file/d/1yZHiEQHpf_WQtN-S4W39roDljVdQRA0U/view?usp=sharing
  
