@@ -44,3 +44,6 @@ Once the intensity images are generated and labelled, they can be divided into t
 
  - *test.py*: Runs the predictions of the trained model on images in *testing_images* folder. Prediction images are saved in the same folder. Trained model can be found at this link : https://drive.google.com/file/d/1yZHiEQHpf_WQtN-S4W39roDljVdQRA0U/view?usp=sharing
  
+### 2D Image prediction to 3D point cloud prediction
+
+- *improved_img2point.py*: Convert 2D image predictions *testing_images2* into 3D point cloud using georeferencing files in *EB_intensity images/data_for_3D*. The point cloud files are saved in *3D_predictions*
