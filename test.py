@@ -8,7 +8,7 @@ model = unet()
 model.load_weights("trained_unet_model.hdf5")
 
 cwd=os.getcwd()
-test_dir="testing_images"
+test_dir="testing_images2"
 
 abs_testing_image_dir=os.path.join(os.sep,cwd,test_dir)
 
