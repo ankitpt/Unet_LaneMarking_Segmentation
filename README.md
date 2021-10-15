@@ -46,4 +46,4 @@ Once the intensity images are generated and labelled, they can be divided into t
  
 ### 2D Image prediction to 3D point cloud prediction
 
-- *improved_img2point.py*: Convert 2D image predictions *testing_images2* into 3D point cloud using georeferencing files in *EB_intensity images/data_for_3D*. The point cloud files are saved in *3D_predictions*
+- *improved_img2point.py*: Convert 2D image predictions *testing_images2* into 3D point cloud using georeferencing files in *EB_intensity images/data_for_3D*. The point cloud files are saved in *3D_predictions* folder
